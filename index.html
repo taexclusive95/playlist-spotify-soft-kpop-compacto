@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Playlist – Modo Discreto</title>
+
+<!-- Quicksand (ligera y redondeada) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    /* Alturas del player */
+    --player-height: 380px;   /* grande al expandir (puedes usar 152px si prefieres compacto) */
+    --bleed: 3px;             /* recorte anti-borde del iframe */
+    /* Holográfico pastel (match con tu frase) */
+    --a:#f0eaff; --b:#dcd0ff; --c:#fbe7ff; --d:#ffeef8; --e:#eaf6ff; --f:#eafff6;
+    --ink:#241a39;
+  }
+
+  /* Reset + centrado */
+  *{box-sizing:border-box}
+  html, body { height:100%; margin:0; }
+  body{
+    display:flex; align-items:center; justify-content:center;
+    background:#faf7ff; color:var(--ink);
+    font-family:"Quicksand", Arial, sans-serif;
+  }
+
+  /* Fondo holográfico suave */
+  .bg{
+    position:fixed; inset:0; z-index:0; overflow:hidden;
+    background: conic-gradient(from 0deg, var(--a),var(--b),var(--c),var(--d),var(--e),var(--f),var(--b),var(--a));
+    filter: blur(60px) saturate(110%) brightness(105%);
+    animation: spin 45s linear infinite; opacity:.9;
+  }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* Contenedor principal */
+  .dock{
+    position:relative; z-index:1;
+    width:min(820px, 92vw);
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+  }
+
+  /* Botón pill (modo discreto) */
+  .pill{
+    display:inline-flex; align-items:center; gap:.55rem;
+    padding:.6rem .9rem;
+    background: rgba(255,255,255,.28);
+    backdrop-filter: blur(10px) saturate(115%);
+    -webkit-backdrop-filter: blur(10px) saturate(115%);
+    border-radius: 999px;
+    box-shadow: 0 8px 20px rgba(36,26,57,.08);
+    cursor:pointer; user-select:none;
+    transition: transform .15s ease, background .2s ease;
+    font-weight:500; font-size:.95rem;
+  }
+  .pill:hover{ transform: translateY(-1px); background: rgba(255,255,255,.34); }
+  .pill:active{ transform: translateY(0); }
+
+  /* Área expandible (colapsada por defecto) */
+  .panel{
+    width:100%;
+    overflow:hidden;
+    max-height:0;           /* cerrado */
+    opacity:0;
+    transform: translateY(-4px);
+    transition: max-height .45s ease, opacity .35s ease, transform .35s ease;
+  }
+  .panel.open{
+    max-height: calc(var(--player-height) + 12px); /* alto del player + margen interno */
+    opacity:1;
+    transform: translateY(0);
+  }
+
+  /* Wrapper del player con recorte anti-borde */
+  .player-wrap{
+    position:relative;
+    width:100%;
+    height: var(--player-height);
+    border-radius:18px;
+    overflow:hidden;          /* recorta el “bleed” del iframe */
+    box-shadow: 0 8px 20px rgba(36,26,57,.08);
+  }
+  .player-wrap iframe{
+    position:absolute;
+    top: calc(-1 * var(--bleed)); left: calc(-1 * var(--bleed));
+    width: calc(100% + var(--bleed)*2);
+    height: calc(100% + var(--bleed)*2);
+    border:0; display:block;
+  }
+
+  /* Accesibilidad: respeta “reduce motion” */
+  @media (prefers-reduced-motion: reduce){
+    .bg{ animation:none }
+    .panel{ transition:none }
+    .pill{ transition:none }
+  }
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="dock">
+    <!-- Botón discreto -->
+    <button id="toggle" class="pill" aria-expanded="false" aria-controls="playlist-panel">
+      🎧 Abrir playlist
+    </button>
+
+    <!-- Panel expandible -->
+    <div id="playlist-panel" class="panel" role="region" aria-label="Playlist de Spotify">
+      <div class="player-wrap">
+        <!-- Lazy-load: el src se asigna solo al abrir por primera vez -->
+        <iframe id="spotifyFrame"
+          data-src="https://open.spotify.com/embed/playlist/YOUR_PLAYLIST_ID"
+          allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy">
+        </iframe>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const btn = document.getElementById('toggle');
+  const panel = document.getElementById('playlist-panel');
+  const frame = document.getElementById('spotifyFrame');
+  let loaded = false;
+
+  btn.addEventListener('click', () => {
+    const isOpen = panel.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(isOpen));
+    btn.textContent = isOpen ? '🎧 Cerrar playlist' : '🎧 Abrir playlist';
+
+    // Carga el iframe sólo la primera vez que se abre
+    if (isOpen && !loaded) {
+      frame.src = frame.getAttribute('data-src');
+      loaded = true;
+    }
+  });
+</script>
+</body>
+</html>
